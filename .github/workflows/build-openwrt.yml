@@ -21,7 +21,8 @@ on:
 env:
   REPO_URL: https://git.openwrt.org/openwrt/openwrt.git
   REPO_BRANCH: master
-  BUILD_ROOT: ${{ github.workspace }}/openwrt
+  BUILD_MOUNT: ${{ github.workspace }}/buildspace
+  BUILD_ROOT: ${{ github.workspace }}/buildspace/openwrt
   DEPENDENCIES: ${{ github.workspace }}/dependencies-ubuntu.txt
   CUSTOM_FEEDS_SH: ${{ github.workspace }}/custom-feeds.sh
   CUSTOM_PACKAGES_SH: ${{ github.workspace }}/custom-packages.sh
@@ -58,7 +59,7 @@ jobs:
         remove-haskell: true
         remove-codeql: true
         remove-docker-images: true
-        build-mount-path: ${{ env.BUILD_ROOT }}
+        build-mount-path: ${{ env.BUILD_MOUNT }}
 
     - name: Download the sources
       run: git clone --branch $REPO_BRANCH $REPO_URL $BUILD_ROOT
