@@ -1,4 +1,4 @@
-# Load luci-app-openclash
+#!/bin/bash
 
-git clone --depth 1 --branch master https://github.com/vernesong/OpenClash.git
-mv OpenClash/luci-app-openclash $BUILD_ROOT/package
+# Load daed / luci-app-daed
+git clone --depth 1 https://github.com/QiuSimons/luci-app-daed.git $BUILD_ROOT/package/dae
