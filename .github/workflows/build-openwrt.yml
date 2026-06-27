@@ -37,15 +37,6 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - name: Maximize build disk space
-      uses: easimon/maximize-build-space@master
-      with:
-        remove-dotnet: true
-        remove-android: true
-        remove-haskell: true
-        remove-codeql: true
-        remove-docker-images: true
-
     - name: Checkout
       uses: actions/checkout@main
 
@@ -59,8 +50,18 @@ jobs:
         sudo apt-get -qq clean
         sudo timedatectl set-timezone "$TZ"
 
+    - name: Maximize build disk space
+      uses: easimon/maximize-build-space@master
+      with:
+        remove-dotnet: true
+        remove-android: true
+        remove-haskell: true
+        remove-codeql: true
+        remove-docker-images: true
+        build-mount-path: ${{ env.BUILD_ROOT }}
+
     - name: Download the sources
-      run: git clone --branch $REPO_BRANCH $REPO_URL
+      run: git clone --branch $REPO_BRANCH $REPO_URL $BUILD_ROOT
 
     - name: Auto select a specific code revision
       id: autoselect
