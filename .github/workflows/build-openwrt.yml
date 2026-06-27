@@ -37,16 +37,6 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - name: Initialization environment
-      env:
-        DEBIAN_FRONTEND: noninteractive
-      run: |
-        sudo apt-get -qq update && sudo apt-get -qq upgrade
-        sudo apt-get -qq install $(cat $DEPENDENCIES)
-        sudo apt-get -qq autoremove --purge
-        sudo apt-get -qq clean
-        sudo timedatectl set-timezone "$TZ"
-
     - name: Maximize build disk space
       uses: easimon/maximize-build-space@master
       with:
@@ -58,6 +48,16 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@main
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo apt-get -qq update && sudo apt-get -qq upgrade
+        sudo apt-get -qq install $(cat $DEPENDENCIES)
+        sudo apt-get -qq autoremove --purge
+        sudo apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
 
     - name: Download the sources
       run: git clone --branch $REPO_BRANCH $REPO_URL

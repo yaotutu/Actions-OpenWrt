@@ -10,22 +10,9 @@ echo 'CONFIG_PACKAGE_luci=y' >> $BUILD_ROOT/.config
 echo 'CONFIG_PACKAGE_luci-ssl=y' >> $BUILD_ROOT/.config
 echo 'CONFIG_LUCI_LANG_zh_Hans=y' >> $BUILD_ROOT/.config
 
-# daed
-echo 'CONFIG_PACKAGE_daed=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_PACKAGE_luci-app-daed=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_PACKAGE_luci-compat=y' >> $BUILD_ROOT/.config
-
-# daed eBPF requirements
-echo 'CONFIG_DEVEL=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_KERNEL_DEBUG_INFO=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_KERNEL_DEBUG_INFO_REDUCED=n' >> $BUILD_ROOT/.config
-echo 'CONFIG_KERNEL_DEBUG_INFO_BTF=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_KERNEL_CGROUPS=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_KERNEL_CGROUP_BPF=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_KERNEL_BPF_EVENTS=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_BPF_TOOLCHAIN_HOST=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_KERNEL_XDP_SOCKETS=y' >> $BUILD_ROOT/.config
-echo 'CONFIG_PACKAGE_kmod-xdp-sockets-diag=y' >> $BUILD_ROOT/.config
+# daed is temporarily disabled while validating the base MT3000 build.
+echo '# CONFIG_PACKAGE_daed is not set' >> $BUILD_ROOT/.config
+echo '# CONFIG_PACKAGE_luci-app-daed is not set' >> $BUILD_ROOT/.config
 
 # sing-box
 echo 'CONFIG_PACKAGE_sing-box=y' >> $BUILD_ROOT/.config
