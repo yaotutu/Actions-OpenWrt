@@ -18,6 +18,9 @@ on:
         default: 'snapshot'
         type: string
 
+permissions:
+  contents: write
+
 env:
   REPO_URL: https://git.openwrt.org/openwrt/openwrt.git
   REPO_BRANCH: master
