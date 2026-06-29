@@ -15,8 +15,9 @@ uci -q set nikki.mixin.api_listen='[::]:9090'
 uci -q set nikki.mixin.dns_mode='redir-host'
 uci -q set nikki.proxy.fake_ip_ping_hijack='0'
 
-# GeoIP is bundled at /etc/nikki/run/geoip.metadb. Keep automatic GeoX refresh
-# off so first boot does not depend on GitHub release assets.
+# GeoX data is bundled under /etc/nikki/run/:
+# geoip.metadb for GEOIP rules, plus geoip.dat/geosite.dat for future profiles.
+# Keep automatic GeoX refresh off so first boot does not depend on GitHub assets.
 uci -q set nikki.mixin.geox_auto_update='0'
 
 uci -q commit nikki
