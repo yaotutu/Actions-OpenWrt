@@ -31,11 +31,17 @@ jobs:
     - name: Resolve version
       id: version
       run: |
+        set -o pipefail
         V="${{ github.event.inputs.version }}"
         if [ -z "$V" ]; then
-          V=$(curl -fsSL https://downloads.openwrt.org/releases/versions.json | sed -n 's/.*"stable_version": *"\([^"]*\)".*/\1/p')
+          # Latest published release directory, e.g. 24.10.7
+          V=$(curl -fsSL https://downloads.openwrt.org/releases/ \
+            | grep -oE 'href="[0-9]+\.[0-9]+\.[0-9]+/"' \
+            | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' \
+            | sort -V | tail -n1)
         fi
         V="${V#v}"
+        [ -n "$V" ] || { echo "Failed to resolve OpenWrt version"; exit 1; }
         echo "version=$V" >> $GITHUB_OUTPUT
         echo "series=$(echo "$V" | cut -d. -f1,2)" >> $GITHUB_OUTPUT
         echo "Building OpenWrt $V (feed series $(echo "$V" | cut -d. -f1,2))"
