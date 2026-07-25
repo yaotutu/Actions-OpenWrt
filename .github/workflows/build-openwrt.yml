@@ -1,7 +1,6 @@
-name: Build OpenWrt
+name: Build OpenWrt (source)
 
 on:
-  repository_dispatch:
   workflow_dispatch:
     inputs:
       ssh:

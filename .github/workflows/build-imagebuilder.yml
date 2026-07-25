@@ -1,0 +1,125 @@
+name: Build OpenWrt (ImageBuilder)
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'OpenWrt version (e.g. 24.10.2, empty = latest stable)'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  TARGET: mediatek/filogic
+  ARCH: aarch64_cortex-a53
+  PROFILE: glinet_gl-mt3000
+  PW_FEED_BASE: https://master.dl.sourceforge.net/project/openwrt-passwall-build
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@main
+
+    - name: Resolve version
+      id: version
+      run: |
+        V="${{ github.event.inputs.version }}"
+        if [ -z "$V" ]; then
+          V=$(curl -fsSL https://downloads.openwrt.org/releases/versions.json | sed -n 's/.*"stable_version": *"\([^"]*\)".*/\1/p')
+        fi
+        V="${V#v}"
+        echo "version=$V" >> $GITHUB_OUTPUT
+        echo "series=$(echo "$V" | cut -d. -f1,2)" >> $GITHUB_OUTPUT
+        echo "Building OpenWrt $V (feed series $(echo "$V" | cut -d. -f1,2))"
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install --no-install-recommends build-essential gawk unzip rsync file
+        sudo timedatectl set-timezone "$TZ"
+
+    - name: Download ImageBuilder
+      run: |
+        V="${{ steps.version.outputs.version }}"
+        wget -q "https://downloads.openwrt.org/releases/$V/targets/$TARGET/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.xz"
+        tar -xf openwrt-imagebuilder-*.tar.xz
+        mv openwrt-imagebuilder-* imagebuilder
+
+    - name: Add passwall feeds and signing key
+      run: |
+        cd imagebuilder
+        S="${{ steps.version.outputs.series }}"
+        {
+          echo "src/gz passwall_luci $PW_FEED_BASE/releases/packages-$S/$ARCH/passwall_luci"
+          echo "src/gz passwall_packages $PW_FEED_BASE/releases/packages-$S/$ARCH/passwall_packages"
+          echo "src/gz passwall2 $PW_FEED_BASE/releases/packages-$S/$ARCH/passwall2"
+        } >> repositories.conf
+        wget -q "$PW_FEED_BASE/passwall.pub" -O keys/passwall.pub
+
+    - name: Build firmware image
+      id: compile
+      run: |
+        cd imagebuilder
+        make image PROFILE="$PROFILE" PACKAGES="luci luci-ssl luci-i18n-base-zh-cn \
+          wpad-mbedtls -wpad-basic-mbedtls \
+          usteer luci-app-usteer luci-i18n-usteer-zh-cn \
+          -dnsmasq dnsmasq-full \
+          luci-app-passwall2 luci-i18n-passwall2-zh-cn \
+          chinadns-ng xray-core sing-box hysteria naiveproxy \
+          shadowsocks-rust-sslocal shadowsocksr-libev-ssr-local shadowsocksr-libev-ssr-redir \
+          simple-obfs-client v2ray-plugin \
+          kmod-nft-socket kmod-nft-tproxy kmod-nft-nat"
+        echo "status=success" >> $GITHUB_OUTPUT
+        echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+
+    - name: Organize files
+      id: organize
+      run: |
+        cd imagebuilder/bin/targets/$TARGET
+        rm -rf packages
+        { echo '### SHA256SUMS'; echo '```txt'; cat sha256sums; echo '```'; } > $GITHUB_WORKSPACE/SHA256SUMS
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: Upload firmware directory
+      uses: actions/upload-artifact@main
+      if: steps.organize.outputs.status == 'success'
+      with:
+        name: OpenWrt_firmware_${{ env.PROFILE }}_${{ env.FILE_DATE }}
+        path: ${{ env.FIRMWARE }}
+
+    - name: Upload firmware to Release
+      uses: softprops/action-gh-release@master
+      if: steps.compile.outputs.status == 'success'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: IB_v${{ steps.version.outputs.version }}_${{ env.FILE_DATE }}
+        files: ${{ env.FIRMWARE }}/*
+        body_path: ${{ github.workspace }}/SHA256SUMS
+
+    - name: Delete workflow runs
+      if: always()
+      uses: Mattraks/delete-workflow-runs@main
+      with:
+        retain_days: 30
+        keep_minimum_runs: 5
+
+    - name: Remove old Releases
+      if: always()
+      uses: dev-drprasad/delete-older-releases@master
+      with:
+        keep_latest: 5
+        delete_tags: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
