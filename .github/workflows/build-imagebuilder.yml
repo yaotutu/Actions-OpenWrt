@@ -45,14 +45,17 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo apt-get -qq update
-        sudo apt-get -qq install --no-install-recommends build-essential gawk unzip rsync file
+        sudo apt-get -qq install --no-install-recommends build-essential gawk unzip rsync file zstd
         sudo timedatectl set-timezone "$TZ"
 
     - name: Download ImageBuilder
       run: |
         V="${{ steps.version.outputs.version }}"
-        wget -q "https://downloads.openwrt.org/releases/$V/targets/$TARGET/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.xz"
-        tar -xf openwrt-imagebuilder-*.tar.xz
+        BASE="https://downloads.openwrt.org/releases/$V/targets/$TARGET"
+        # Newer releases ship .tar.zst, older ones .tar.xz.
+        wget -q "$BASE/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.zst" \
+          || wget -q "$BASE/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.xz"
+        tar -xf openwrt-imagebuilder-*.tar.*
         mv openwrt-imagebuilder-* imagebuilder
 
     - name: Add passwall feeds and signing key
