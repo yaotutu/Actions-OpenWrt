@@ -109,7 +109,7 @@ jobs:
       uses: actions/upload-artifact@main
       if: steps.organize.outputs.status == 'success'
       with:
-        name: OpenWrt_firmware_${{ env.PROFILE }}_${{ env.FILE_DATE }}
+        name: OpenWrt_firmware_${{ steps.version.outputs.version }}_${{ env.PROFILE }}_${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
 
     - name: Upload firmware to Release
