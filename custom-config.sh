@@ -18,26 +18,26 @@ echo 'CONFIG_PACKAGE_wpad-mbedtls=y' >> "$BUILD_ROOT/.config"
 echo 'CONFIG_PACKAGE_usteer=y' >> "$BUILD_ROOT/.config"
 echo 'CONFIG_PACKAGE_luci-app-usteer=y' >> "$BUILD_ROOT/.config"
 
-# Nikki
-echo 'CONFIG_PACKAGE_mihomo-meta=y' >> "$BUILD_ROOT/.config"
-echo 'CONFIG_PACKAGE_nikki=y' >> "$BUILD_ROOT/.config"
-echo 'CONFIG_PACKAGE_luci-app-nikki=y' >> "$BUILD_ROOT/.config"
-echo 'CONFIG_PACKAGE_luci-i18n-nikki-zh-cn=y' >> "$BUILD_ROOT/.config"
+# PassWall2
+echo 'CONFIG_PACKAGE_luci-app-passwall2=y' >> "$BUILD_ROOT/.config"
+echo 'CONFIG_PACKAGE_luci-i18n-passwall2-zh-cn=y' >> "$BUILD_ROOT/.config"
 
-# Keep proxy stack surface limited to Nikki.
-echo '# CONFIG_PACKAGE_sing-box is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_momo is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_luci-app-momo is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_luci-i18n-momo-zh-cn is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_mihomo is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_mihomo-alpha is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_luci-app-mihomo is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_luci-i18n-mihomo-zh-cn is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_luci-app-openclash is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_luci-app-passwall is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_luci-app-passwall2 is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_luci-app-ssr-plus is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_clash is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_daed is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_dae is not set' >> "$BUILD_ROOT/.config"
-echo '# CONFIG_PACKAGE_luci-app-daed is not set' >> "$BUILD_ROOT/.config"
+# dnsmasq-full replaces the default dnsmasq (required by PassWall2 nftset/dns features).
+echo '# CONFIG_PACKAGE_dnsmasq is not set' >> "$BUILD_ROOT/.config"
+echo 'CONFIG_PACKAGE_dnsmasq-full=y' >> "$BUILD_ROOT/.config"
+
+# Basic cores: both Xray and SingBox.
+echo 'CONFIG_PACKAGE_luci-app-passwall2_Basic_Core_All=y' >> "$BUILD_ROOT/.config"
+
+# Optional components; each select pulls in the correct package from the feed.
+echo 'CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Hysteria=y' >> "$BUILD_ROOT/.config"
+echo 'CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_NaiveProxy=y' >> "$BUILD_ROOT/.config"
+echo 'CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Shadowsocks_Rust_Client=y' >> "$BUILD_ROOT/.config"
+echo 'CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_ShadowsocksR_Libev_Client=y' >> "$BUILD_ROOT/.config"
+echo 'CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_Simple_Obfs=y' >> "$BUILD_ROOT/.config"
+echo 'CONFIG_PACKAGE_luci-app-passwall2_INCLUDE_V2ray_Plugin=y' >> "$BUILD_ROOT/.config"
+
+# GeoIP/GeoSite data built into the firmware (no runtime download needed).
+echo 'CONFIG_PACKAGE_v2ray-geoip=y' >> "$BUILD_ROOT/.config"
+echo 'CONFIG_PACKAGE_v2ray-geosite=y' >> "$BUILD_ROOT/.config"
+echo 'CONFIG_PACKAGE_geoview=y' >> "$BUILD_ROOT/.config"
