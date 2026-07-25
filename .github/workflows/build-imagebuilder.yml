@@ -73,7 +73,12 @@ jobs:
           echo "src/gz passwall_packages $PW_FEED_BASE/releases/packages-$S/$ARCH/passwall_packages"
           echo "src/gz passwall2 $PW_FEED_BASE/releases/packages-$S/$ARCH/passwall2"
         } >> repositories.conf
-        wget -q "$PW_FEED_BASE/ipk.pub" -O keys/passwall.pub
+        # opkg looks up usign keys as keys/<fingerprint>; the fingerprint is
+        # embedded in the key file itself (bytes 3-10 after the "Ed" magic).
+        wget -q "$PW_FEED_BASE/ipk.pub" -O /tmp/passwall.pub
+        FP=$(sed -n '2p' /tmp/passwall.pub | base64 -d | tail -c +3 | head -c 8 | od -An -tx1 | tr -d ' \n')
+        [ -n "$FP" ] || { echo "Failed to derive key fingerprint"; exit 1; }
+        cp /tmp/passwall.pub "keys/$FP"
 
     - name: Build firmware image
       id: compile
