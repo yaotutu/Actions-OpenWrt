@@ -62,7 +62,7 @@ jobs:
         wget -q "$BASE/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.zst" \
           || wget -q "$BASE/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.xz"
         tar -xf openwrt-imagebuilder-*.tar.*
-        mv openwrt-imagebuilder-* imagebuilder
+        mv openwrt-imagebuilder-*/ imagebuilder
 
     - name: Add passwall feeds and signing key
       run: |
