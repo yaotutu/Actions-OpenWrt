@@ -19,6 +19,8 @@
 
 这个仓库按独立项目维护，不再把 `P3TERX/Actions-OpenWrt` 视为 upstream：
 
+- GitHub 仓库地址：<https://github.com/yaotutu/gl-mt3000-openwrt>。
+
 - 不要为它添加名为 `upstream` 的 remote。
 - 不要尝试 merge、rebase 或同步该模板。
 - 该模板只在历史来源和 MIT 许可证中保留署名，不参与后续维护决策。

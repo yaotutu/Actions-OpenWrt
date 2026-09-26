@@ -1,5 +1,7 @@
 # GL.iNet GL-MT3000 OpenWrt Builder
 
+Repository: https://github.com/yaotutu/gl-mt3000-openwrt
+
 这是一个独立的 OpenWrt 固件构建仓库，用于在 GitHub Actions 中为 **GL.iNet GL-MT3000 / Beryl AX** 生成定制固件。
 
 它不是 `P3TERX/Actions-OpenWrt` 的维护分支：不追求与该模板保持同步，也不会把该模板当作 upstream 进行合并。项目按自身需求维护，只跟随必要的 OpenWrt stable 版本和 PassWall 相关软件源。
