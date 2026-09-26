@@ -1,3 +1,4 @@
+# Standalone repository: do not sync from the historical template upstream.
 name: Update Checker
 
 env:
