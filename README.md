@@ -24,7 +24,7 @@ Repository: https://github.com/yaotutu/gl-mt3000-openwrt
 | --- | --- |
 | `Build OpenWrt (ImageBuilder)` | 快速构建路径。下载官方 OpenWrt ImageBuilder，加入 PassWall 预编译软件源并生成固件。 |
 | `Build OpenWrt (source)` | 从 OpenWrt 源码完整编译。适合深度定制，耗时长、磁盘占用高。 |
-| `Update Checker` | 每天检查 OpenWrt 最新 stable tag；发现新版本时触发 ImageBuilder 构建。 |
+| `Update Checker` | 每天检查当前支持的 OpenWrt 24.10.x stable tag；发现新版本时触发 ImageBuilder 构建。 |
 
 构建产物会上传到 GitHub Actions Artifacts 和 Releases。
 

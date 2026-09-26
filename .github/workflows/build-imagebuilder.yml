@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'OpenWrt version (e.g. 24.10.2, empty = latest stable)'
+        description: 'OpenWrt version (e.g. 24.10.8, empty = latest supported 24.10.x)'
         required: false
         default: ''
         type: string
@@ -35,10 +35,11 @@ jobs:
         set -o pipefail
         V="${{ github.event.inputs.version }}"
         if [ -z "$V" ]; then
-          # Latest published release directory, e.g. 24.10.7
+          # Keep the ImageBuilder path on the latest patch release of the
+          # release series for which PassWall publishes binary packages.
           V=$(curl -fsSL https://downloads.openwrt.org/releases/ \
-            | grep -oE 'href="[0-9]+\.[0-9]+\.[0-9]+/"' \
-            | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' \
+            | grep -oE 'href="24\.10\.[0-9]+/"' \
+            | grep -oE '24\.10\.[0-9]+' \
             | sort -V | tail -n1)
         fi
         V="${V#v}"
