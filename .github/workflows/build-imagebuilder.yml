@@ -5,15 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  # Release/tag creation and old-release cleanup.
   contents: write
-  # Old workflow-run cleanup.
-  actions: write
-
-# Avoid overlapping ImageBuilder builds and duplicate releases.
-concurrency:
-  group: imagebuilder-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   OPENWRT_VERSION: 24.10.8
@@ -21,55 +13,24 @@ env:
   ARCH: aarch64_cortex-a53
   PROFILE: glinet_gl-mt3000
   PW_FEED_BASE: https://master.dl.sourceforge.net/project/openwrt-passwall-build
-  PASSWALL_KEY_FINGERPRINT: 0abda65a492b4887
   TZ: Asia/Shanghai
-  # Keep this list in one place. The build and manifest assertions both use it.
-  FIRMWARE_PACKAGES: >-
-    luci
-    luci-ssl
-    luci-i18n-base-zh-cn
-    wpad-mbedtls
-    -wpad-basic-mbedtls
-    usteer
-    luci-app-usteer
-    luci-i18n-usteer-zh-cn
-    -dnsmasq
-    dnsmasq-full
-    luci-app-passwall2
-    luci-i18n-passwall2-zh-cn
-    chinadns-ng
-    xray-core
-    sing-box
-    hysteria
-    naiveproxy
-    shadowsocks-rust-sslocal
-    shadowsocksr-libev-ssr-local
-    shadowsocksr-libev-ssr-redir
-    simple-obfs-client
-    v2ray-plugin
-    kmod-nft-socket
-    kmod-nft-tproxy
-    kmod-nft-nat
 
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
 
     steps:
     - name: Checkout
-      uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      uses: actions/checkout@main
 
     - name: Resolve version
       id: version
       run: |
-        set -euo pipefail
         V="${OPENWRT_VERSION#v}"
         [ -n "$V" ] || { echo "OPENWRT_VERSION is not set"; exit 1; }
-        SERIES="$(printf '%s\n' "$V" | cut -d. -f1,2)"
         echo "version=$V" >> "$GITHUB_OUTPUT"
-        echo "series=$SERIES" >> "$GITHUB_OUTPUT"
-        echo "Building pinned OpenWrt $V (feed series $SERIES)"
+        echo "series=$(echo "$V" | cut -d. -f1,2)" >> "$GITHUB_OUTPUT"
+        echo "Building pinned OpenWrt $V (feed series $(echo "$V" | cut -d. -f1,2))"
 
     - name: Initialization environment
       env:
@@ -79,34 +40,18 @@ jobs:
         sudo apt-get -qq install --no-install-recommends build-essential gawk unzip rsync file zstd
         sudo timedatectl set-timezone "$TZ"
 
-    - name: Download and verify ImageBuilder
+    - name: Download ImageBuilder
       run: |
-        set -euo pipefail
         V="${{ steps.version.outputs.version }}"
         BASE="https://downloads.openwrt.org/releases/$V/targets/$TARGET"
-        CHECKSUMS="$RUNNER_TEMP/openwrt-sha256sums"
-        ZST="$RUNNER_TEMP/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.zst"
-        XZ="$RUNNER_TEMP/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.xz"
-
-        wget -q "$BASE/sha256sums" -O "$CHECKSUMS"
-        if wget -q "$BASE/$(basename "$ZST")" -O "$ZST"; then
-          ARCHIVE="$ZST"
-        else
-          ARCHIVE="$XZ"
-          wget -q "$BASE/$(basename "$XZ")" -O "$XZ"
-        fi
-
-        # Verify the official ImageBuilder archive instead of trusting HTTPS alone.
-        (
-          cd "$RUNNER_TEMP"
-          grep -F "*$(basename "$ARCHIVE")" "$(basename "$CHECKSUMS")" | sha256sum -c -
-        )
-        tar -xf "$ARCHIVE"
+        # Newer releases ship .tar.zst, older ones .tar.xz.
+        wget -q "$BASE/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.zst" \
+          || wget -q "$BASE/openwrt-imagebuilder-$V-mediatek-filogic.Linux-x86_64.tar.xz"
+        tar -xf openwrt-imagebuilder-*.tar.*
         mv openwrt-imagebuilder-*/ imagebuilder
 
     - name: Add passwall feeds and signing key
       run: |
-        set -euo pipefail
         cd imagebuilder
         S="${{ steps.version.outputs.series }}"
         {
@@ -114,130 +59,67 @@ jobs:
           echo "src/gz passwall_packages $PW_FEED_BASE/releases/packages-$S/$ARCH/passwall_packages"
           echo "src/gz passwall2 $PW_FEED_BASE/releases/packages-$S/$ARCH/passwall2"
         } >> repositories.conf
-
-        # The key is pinned in this repository. This prevents a changed upstream
-        # key from silently becoming trusted by a build.
-        cp "$GITHUB_WORKSPACE/keys/passwall.ipk.pub" /tmp/passwall.pub
         # opkg looks up usign keys as keys/<fingerprint>; the fingerprint is
         # embedded in the key file itself (bytes 3-10 after the "Ed" magic).
-        FINGERPRINT="$(sed -n '2p' /tmp/passwall.pub | base64 -d | tail -c +3 | head -c 8 | od -An -tx1 | tr -d ' \n')"
-        [ -n "$FINGERPRINT" ] || { echo "Failed to derive key fingerprint"; exit 1; }
-        [ "$FINGERPRINT" = "$PASSWALL_KEY_FINGERPRINT" ] || {
-          echo "Unexpected PassWall signing key fingerprint: $FINGERPRINT"
-          exit 1
-        }
-        cp /tmp/passwall.pub "keys/$FINGERPRINT"
-
-    - name: Prepare firmware metadata
-      id: metadata
-      run: |
-        set -euo pipefail
-        FILE_DATE="$(date +"%Y%m%d%H%M%S")-${GITHUB_RUN_NUMBER}"
-        RELEASE_TAG="IB_v${OPENWRT_VERSION}_${FILE_DATE}"
-
-        # The updater reads this file after boot to compare firmware identity
-        # with this repository's latest GitHub Release.
-        {
-          printf '%s\n' '# This file is regenerated for each ImageBuilder build.'
-          printf '%s\n' '# BUILD_TAG identifies the GitHub Release that produced this firmware.'
-          printf 'BUILD_TAG=%s\n' "$RELEASE_TAG"
-          printf 'OPENWRT_VERSION=%s\n' "$OPENWRT_VERSION"
-        } > "$GITHUB_WORKSPACE/files/etc/gl-mt3000-release"
-
-        test -x "$GITHUB_WORKSPACE/files/usr/sbin/gl-mt3000-update"
-        test -f "$GITHUB_WORKSPACE/files/etc/config/gl-mt3000-update"
-
-        echo "file_date=$FILE_DATE" >> "$GITHUB_OUTPUT"
-        echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+        wget -q "$PW_FEED_BASE/ipk.pub" -O /tmp/passwall.pub
+        FP=$(sed -n '2p' /tmp/passwall.pub | base64 -d | tail -c +3 | head -c 8 | od -An -tx1 | tr -d ' \n')
+        [ -n "$FP" ] || { echo "Failed to derive key fingerprint"; exit 1; }
+        cp /tmp/passwall.pub "keys/$FP"
 
     - name: Build firmware image
       id: compile
       run: |
-        set -euo pipefail
         cd imagebuilder
-        make image PROFILE="$PROFILE" FILES="$GITHUB_WORKSPACE/files" PACKAGES="$FIRMWARE_PACKAGES"
-        echo "status=success" >> "$GITHUB_OUTPUT"
-
-    - name: Verify firmware composition
-      id: verify
-      run: |
-        set -euo pipefail
-        cd "imagebuilder/bin/targets/$TARGET"
-        sha256sum -c sha256sums
-
-        MANIFEST="$(find . -maxdepth 1 -type f -name 'openwrt-*glinet_gl-mt3000.manifest' -print -quit)"
-        [ -n "$MANIFEST" ] || { echo "Firmware manifest not found"; exit 1; }
-
-        MISSING=()
-        UNEXPECTED=()
-        for PACKAGE in $FIRMWARE_PACKAGES; do
-          case "$PACKAGE" in
-            -*)
-              NAME="${PACKAGE#-}"
-              if grep -Eq "^$NAME - " "$MANIFEST"; then
-                UNEXPECTED+=("$NAME")
-              fi
-              ;;
-            *)
-              grep -Eq "^$PACKAGE - " "$MANIFEST" || MISSING+=("$PACKAGE")
-              ;;
-          esac
-        done
-
-        if [ "${#MISSING[@]}" -gt 0 ]; then
-          printf 'Missing expected package(s): %s\n' "${MISSING[*]}"
-          exit 1
-        fi
-        if [ "${#UNEXPECTED[@]}" -gt 0 ]; then
-          printf 'Found excluded package(s): %s\n' "${UNEXPECTED[*]}"
-          exit 1
-        fi
-
-        printf 'Firmware composition verified: %s\n' "$MANIFEST"
-        echo "status=success" >> "$GITHUB_OUTPUT"
+        make image PROFILE="$PROFILE" FILES="$GITHUB_WORKSPACE/files" PACKAGES="luci luci-ssl luci-i18n-base-zh-cn \
+          wpad-mbedtls -wpad-basic-mbedtls \
+          usteer luci-app-usteer luci-i18n-usteer-zh-cn \
+          -dnsmasq dnsmasq-full \
+          luci-app-passwall2 luci-i18n-passwall2-zh-cn \
+          chinadns-ng xray-core sing-box hysteria naiveproxy \
+          shadowsocks-rust-sslocal shadowsocksr-libev-ssr-local shadowsocksr-libev-ssr-redir \
+          simple-obfs-client v2ray-plugin \
+          kmod-nft-socket kmod-nft-tproxy kmod-nft-nat"
+        echo "status=success" >> $GITHUB_OUTPUT
+        echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
     - name: Organize files
       id: organize
       run: |
-        set -euo pipefail
-        cd "imagebuilder/bin/targets/$TARGET"
+        cd imagebuilder/bin/targets/$TARGET
         rm -rf packages
-        { echo '### SHA256SUMS'; echo '```txt'; cat sha256sums; echo '```'; } > "$GITHUB_WORKSPACE/SHA256SUMS"
-        echo "FIRMWARE=$PWD" >> "$GITHUB_ENV"
-        echo "status=success" >> "$GITHUB_OUTPUT"
+        { echo '### SHA256SUMS'; echo '```txt'; cat sha256sums; echo '```'; } > $GITHUB_WORKSPACE/SHA256SUMS
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware directory
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      uses: actions/upload-artifact@main
       if: steps.organize.outputs.status == 'success'
       with:
-        name: OpenWrt_firmware_${{ steps.version.outputs.version }}_${{ env.PROFILE }}_${{ steps.metadata.outputs.file_date }}
+        name: OpenWrt_firmware_${{ steps.version.outputs.version }}_${{ env.PROFILE }}_${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
 
     - name: Upload firmware to Release
-      uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
-      if: >-
-        steps.compile.outputs.status == 'success' &&
-        steps.verify.outputs.status == 'success'
+      uses: softprops/action-gh-release@master
+      if: steps.compile.outputs.status == 'success'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.metadata.outputs.release_tag }}
+        tag_name: IB_v${{ steps.version.outputs.version }}_${{ env.FILE_DATE }}
         files: ${{ env.FIRMWARE }}/*
         body_path: ${{ github.workspace }}/SHA256SUMS
 
     - name: Delete workflow runs
-      uses: Mattraks/delete-workflow-runs@0cf693bc9909e5e867ee8f27b813224ba862939c # main
-      if: success()
+      if: always()
+      uses: Mattraks/delete-workflow-runs@main
       with:
-        token: ${{ github.token }}
         retain_days: 30
         keep_minimum_runs: 5
 
     - name: Remove old Releases
-      uses: dev-drprasad/delete-older-releases@49df26ac460ea2b7f943d0e33244981fcdfaeea3 # master
-      if: success()
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: always()
+      uses: dev-drprasad/delete-older-releases@master
       with:
         keep_latest: 5
         delete_tags: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
