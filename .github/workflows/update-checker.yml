@@ -16,11 +16,14 @@ jobs:
 
     steps:
 
-    - name: Get Latest Tag
+    - name: Get Latest Supported Tag
       id: getTag
       run: |
         git clone --branch $REPO_BRANCH $REPO_URL .
-        echo "latestTag=$(git tag --sort=-creatordate | head -n1)" >> $GITHUB_OUTPUT
+        # PassWall binary feeds currently support the OpenWrt 24.10 series.
+        latest_tag=$(git tag --list 'v24.10.*' | sort -V | tail -n1)
+        [ -n "$latest_tag" ] || { echo "No OpenWrt 24.10 tag found"; exit 1; }
+        echo "latestTag=$latest_tag" >> $GITHUB_OUTPUT
 
     - name: Compare Tag
       id: cacheTag
