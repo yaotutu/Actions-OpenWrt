@@ -53,20 +53,7 @@ sha256sum -c sha256sums
 
 固件内置 `gl-mt3000-update`，它只查询**本仓库自己的 GitHub Releases**，不会使用 OpenWrt 官方升级源，也不会自动把固件切到官方默认包组合。
 
-可以在 LuCI 中打开：
-
-```text
-System → Online Update / 在线更新
-```
-
-页面支持：
-
-- 查询最新 Release
-- 下载并校验固件
-- 在线升级
-- 可选强制同版本重刷
-
-也可以在 SSH 中执行：
+在路由器上执行：
 
 ```bash
 # 只检查是否有新版本
@@ -158,12 +145,6 @@ files/etc/uci-defaults/99_custom_network  # 首次启动设置 LAN 地址
 files/etc/config/gl-mt3000-update        # 在线更新源和策略配置
 files/etc/gl-mt3000-release              # 当前固件对应的构建标识
 files/usr/sbin/gl-mt3000-update          # 本仓库 Release 在线更新脚本
-files/www/luci-static/resources/view/gl-mt3000-update.js
-                                          # LuCI 在线更新页面
-files/usr/share/luci/menu.d/luci-app-gl-mt3000-update.json
-                                          # LuCI 菜单注册
-files/usr/share/rpcd/acl.d/luci-app-gl-mt3000-update.json
-                                          # LuCI 页面执行权限
 keys/passwall.ipk.pub                    # 固定的 PassWall feed 签名公钥
 dependencies-ubuntu.txt                   # 源码编译依赖
 ```
