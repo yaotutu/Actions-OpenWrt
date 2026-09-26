@@ -49,6 +49,39 @@ sha256sum -c sha256sums
 
 具体哈希以对应 Release 发布的 `sha256sums` 为准。
 
+## 在线检查与升级
+
+固件内置 `gl-mt3000-update`，它只查询**本仓库自己的 GitHub Releases**，不会使用 OpenWrt 官方升级源，也不会自动把固件切到官方默认包组合。
+
+在路由器上执行：
+
+```bash
+# 只检查是否有新版本
+gl-mt3000-update check
+
+# 下载并校验固件
+gl-mt3000-update download
+
+# 下载、校验、测试镜像并升级
+gl-mt3000-update upgrade
+```
+
+更新流程为：
+
+1. 查询 `yaotutu/gl-mt3000-openwrt` 的最新 GitHub Release
+2. 下载对应的 GL-MT3000 sysupgrade 镜像
+3. 从 Release 中的 `sha256sums` 校验 SHA256
+4. 执行 `sysupgrade -T` 检查镜像
+5. 通过 `sysupgrade` 在线升级
+
+默认保留路由器配置。在线更新相关的源仓库和策略配置在：
+
+```text
+/etc/config/gl-mt3000-update
+```
+
+注意：当前已经刷在设备上的旧固件不会自动获得这个新脚本。需要先手动刷入一次包含 `gl-mt3000-update` 的固件；之后的新版本就可以在路由器上直接在线检查和升级。
+
 ## 刷机注意
 
 本项目只面向 GL.iNet GL-MT3000 / Beryl AX，不要刷到其它设备。
@@ -82,10 +115,11 @@ sha256sum -c sha256sums
 
 ImageBuilder 会：
 
-- 下载 OpenWrt `24.10.8` 官方 ImageBuilder
-- 添加 PassWall 预编译软件源
+- 下载并校验 OpenWrt `24.10.8` 官方 ImageBuilder
+- 添加 PassWall 预编译软件源，并使用仓库内固定的签名公钥
 - 安装本项目配置的软件包
 - 生成 GL-MT3000 的 sysupgrade 镜像、manifest、BOM 和校验文件
+- 构建后校验 `sha256sums`，并确认必备/排除包没有漂移
 
 ### 备用：源码完整编译
 
@@ -108,6 +142,10 @@ custom-feeds.sh                           # 源码编译的 PassWall feed
 custom-packages.sh                        # 源码编译的 files/ 覆盖
 prebuild-misc.sh                          # 源码编译前的兼容修补
 files/etc/uci-defaults/99_custom_network  # 首次启动设置 LAN 地址
+files/etc/config/gl-mt3000-update        # 在线更新源和策略配置
+files/etc/gl-mt3000-release              # 当前固件对应的构建标识
+files/usr/sbin/gl-mt3000-update          # 本仓库 Release 在线更新脚本
+keys/passwall.ipk.pub                    # 固定的 PassWall feed 签名公钥
 dependencies-ubuntu.txt                   # 源码编译依赖
 ```
 

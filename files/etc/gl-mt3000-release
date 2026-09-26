@@ -1,0 +1,4 @@
+# This file is regenerated for each ImageBuilder build.
+# BUILD_TAG identifies the GitHub Release that produced this firmware.
+BUILD_TAG=unknown
+OPENWRT_VERSION=unknown

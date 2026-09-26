@@ -1,0 +1,10 @@
+config update 'repository'
+	option enabled '1'
+	option owner 'yaotutu'
+	option repo 'gl-mt3000-openwrt'
+	option channel 'imagebuilder'
+
+config update 'policy'
+	option keep_settings '1'
+	option verify_sha256 '1'
+	option test_image '1'
