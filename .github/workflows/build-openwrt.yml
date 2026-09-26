@@ -12,18 +12,13 @@ on:
         options:
         - "true"
         - "false"
-      version:
-        description: 'OpenWrt version'
-        required: true
-        default: 'snapshot'
-        type: string
 
 permissions:
   contents: write
 
 env:
   REPO_URL: https://git.openwrt.org/openwrt/openwrt.git
-  REPO_BRANCH: master
+  OPENWRT_VERSION: 24.10.8
   BUILD_MOUNT: ${{ github.workspace }}/buildspace
   BUILD_ROOT: ${{ github.workspace }}/buildspace/openwrt
   DEPENDENCIES: ${{ github.workspace }}/dependencies-ubuntu.txt
@@ -64,22 +59,10 @@ jobs:
         remove-docker-images: true
         build-mount-path: ${{ env.BUILD_MOUNT }}
 
-    - name: Download the sources
-      run: git clone --branch $REPO_BRANCH $REPO_URL $BUILD_ROOT
-
-    - name: Auto select a specific code revision
-      id: autoselect
-      if: github.event.client_payload.version == 'stable'
+    - name: Download the pinned source revision
       run: |
-        cd $BUILD_ROOT && git checkout $(git tag --sort=-creatordate | head -n1)
-        echo "status=success" >> $GITHUB_OUTPUT
-
-    - name: Manual select a specific code revision
-      id: manualselect
-      if: github.event.inputs.version != null && github.event.inputs.version != 'snapshot'
-      run: |
-        cd $BUILD_ROOT && git checkout ${{ github.event.inputs.version }}
-        echo "status=success" >> $GITHUB_OUTPUT
+        git clone "$REPO_URL" "$BUILD_ROOT"
+        git -C "$BUILD_ROOT" checkout "v$OPENWRT_VERSION"
 
     - name: Load custom
       run: |
@@ -129,37 +112,19 @@ jobs:
         name: OpenWrt_firmware_${{ env.DEVICE_NAME }}_${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
 
-    - name: Generate stable Release Tag
-      id: stabletag
-      if: steps.autoselect.outputs.status == 'success' || steps.manualselect.outputs.status == 'success'
+    - name: Generate Release tag
+      id: releasetag
       run: |
-        echo "release_tag=$(cd $BUILD_ROOT && git describe --tags --abbrev=0 --exact-match)_$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
-        echo "status=success" >> $GITHUB_OUTPUT
+        echo "release_tag=SRC_v${OPENWRT_VERSION}_$(date +"%Y.%m.%d-%H%M")" >> "$GITHUB_OUTPUT"
+        echo "status=success" >> "$GITHUB_OUTPUT"
 
-    - name: Generate snapshot Release Tag
-      id: snapshottag 
-      if: github.event.inputs.version == 'snapshot'
-      run: |
-        echo "release_tag=SNAPSHOT_$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
-        echo "status=success" >> $GITHUB_OUTPUT
-
-    - name: Upload stable firmware to Release
+    - name: Upload firmware to Release
       uses: softprops/action-gh-release@master
-      if: steps.stabletag.outputs.status == 'success'
+      if: steps.releasetag.outputs.status == 'success'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.stabletag.outputs.release_tag }}
-        files: ${{ env.FIRMWARE }}/*
-        body_path: ${{ env.BUILD_ROOT }}/SHA256SUMS
-
-    - name: Upload snapshot firmware to Release
-      uses: softprops/action-gh-release@master
-      if: steps.snapshottag.outputs.status == 'success'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.snapshottag.outputs.release_tag }}
+        tag_name: ${{ steps.releasetag.outputs.release_tag }}
         files: ${{ env.FIRMWARE }}/*
         body_path: ${{ env.BUILD_ROOT }}/SHA256SUMS
 

@@ -2,19 +2,13 @@
 name: Build OpenWrt (ImageBuilder)
 
 on:
-  repository_dispatch:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'OpenWrt version (e.g. 24.10.8, empty = latest supported 24.10.x)'
-        required: false
-        default: ''
-        type: string
 
 permissions:
   contents: write
 
 env:
+  OPENWRT_VERSION: 24.10.8
   TARGET: mediatek/filogic
   ARCH: aarch64_cortex-a53
   PROFILE: glinet_gl-mt3000
@@ -32,21 +26,11 @@ jobs:
     - name: Resolve version
       id: version
       run: |
-        set -o pipefail
-        V="${{ github.event.inputs.version }}"
-        if [ -z "$V" ]; then
-          # Keep the ImageBuilder path on the latest patch release of the
-          # release series for which PassWall publishes binary packages.
-          V=$(curl -fsSL https://downloads.openwrt.org/releases/ \
-            | grep -oE 'href="24\.10\.[0-9]+/"' \
-            | grep -oE '24\.10\.[0-9]+' \
-            | sort -V | tail -n1)
-        fi
-        V="${V#v}"
-        [ -n "$V" ] || { echo "Failed to resolve OpenWrt version"; exit 1; }
-        echo "version=$V" >> $GITHUB_OUTPUT
-        echo "series=$(echo "$V" | cut -d. -f1,2)" >> $GITHUB_OUTPUT
-        echo "Building OpenWrt $V (feed series $(echo "$V" | cut -d. -f1,2))"
+        V="${OPENWRT_VERSION#v}"
+        [ -n "$V" ] || { echo "OPENWRT_VERSION is not set"; exit 1; }
+        echo "version=$V" >> "$GITHUB_OUTPUT"
+        echo "series=$(echo "$V" | cut -d. -f1,2)" >> "$GITHUB_OUTPUT"
+        echo "Building pinned OpenWrt $V (feed series $(echo "$V" | cut -d. -f1,2))"
 
     - name: Initialization environment
       env:

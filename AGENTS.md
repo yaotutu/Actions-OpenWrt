@@ -24,14 +24,13 @@
 - 不要为它添加名为 `upstream` 的 remote。
 - 不要尝试 merge、rebase 或同步该模板。
 - 该模板只在历史来源和 MIT 许可证中保留署名，不参与后续维护决策。
-- 需要跟随的外部构建输入是 OpenWrt stable release 和 PassWall 相关 feed，不是 P3TERX 模板。
+- 构建版本固定为 OpenWrt 24.10.8；需要跟随的外部构建输入是 PassWall 相关 feed，不是 P3TERX 模板。
 - 如果你决定让 GitHub 仓库脱离 fork network，应使用 GitHub 仓库 Settings 中的 **Leave fork network**；这是仓库元数据变更，不需要修改本仓库文件。
 
 ## 目录职责
 
-- `.github/workflows/build-imagebuilder.yml`：推荐/主要的快速构建入口。下载官方 OpenWrt ImageBuilder，添加 PassWall 二进制软件源，生成固件、Artifact 和 Release。
-- `.github/workflows/build-openwrt.yml`：从 OpenWrt 源码完整编译；只支持手动 `workflow_dispatch`，耗时和磁盘占用远高于 ImageBuilder。
-- `.github/workflows/update-checker.yml`：每天检查 OpenWrt 最新 tag；有新 tag 时通过 `repository_dispatch` 触发 `build-imagebuilder.yml`。注意它不触发 `build-openwrt.yml`。
+- `.github/workflows/build-imagebuilder.yml`：推荐/主要的快速构建入口。固定使用 OpenWrt 24.10.8，下载官方 ImageBuilder，添加 PassWall 二进制软件源，生成固件、Artifact 和 Release。
+- `.github/workflows/build-openwrt.yml`：从固定的 OpenWrt 24.10.8 源码完整编译；只支持手动 `workflow_dispatch`，耗时和磁盘占用远高于 ImageBuilder。
 - `custom-feeds.sh`：源码编译时把 PassWall2 相关 feed 插入到 `BUILD_ROOT/feeds.conf.default` 的最前面，以便优先于官方重复包。
 - `custom-config.sh`：源码编译时追加目标设备、LuCI、PassWall2、联网和 DNS 配置到 `BUILD_ROOT/.config`。
 - `custom-packages.sh`：源码编译时把本仓库 `files/` 复制到 OpenWrt 的 `files/` 目录。
@@ -49,11 +48,10 @@ ImageBuilder 和源码编译不是简单共享同一套 helper 脚本：
 - PassWall 在源码编译中使用 GitHub feed；在 ImageBuilder 中使用预编译二进制 feed。包名或依赖变化可能只在其中一条路径失败。
 - `custom-config.sh` 使用 `CONFIG_PACKAGE_luci-app-passwall2_*` 之类的选择项；ImageBuilder 直接指定具体 ipk 包名。不要假定二者完全同名或一一对应。
 
-### Workflow 触发关系和已知坑
+### Workflow 触发关系
 
-- `update-checker.yml` 每天 UTC 16:00（Asia/Shanghai 次日 00:00）运行，发现新 OpenWrt tag 后发送 `Source Code Update` 的 `repository_dispatch`。
-- `build-imagebuilder.yml` 的 `repository_dispatch:` 没有限定 `types:`，因此它会响应这个 dispatch 事件并执行快速构建。
-- `build-openwrt.yml` 只有手动 `workflow_dispatch`。它包含读取 `github.event.client_payload.version` 的自动选 tag 步骤，但当前没有 `repository_dispatch` 触发器，所以该分支实际不可达；调整前先确认用户想要自动触发哪条构建路径。
+- `build-imagebuilder.yml` 和 `build-openwrt.yml` 都只支持手动 `workflow_dispatch`。
+- 两个构建 workflow 都固定使用 OpenWrt 24.10.8，不再接受运行时版本输入，也没有每日自动触发。
 
 ## 本地脚本约定
 
@@ -69,12 +67,12 @@ ImageBuilder 和源码编译不是简单共享同一套 helper 脚本：
 ## 修改建议
 
 - 修改设备/Profile 时，同步更新 `custom-config.sh` 和 `build-imagebuilder.yml` 的 `TARGET`、`ARCH`、`PROFILE` 与包列表。
+- 升级 OpenWrt 版本时，同步更新 `build-imagebuilder.yml` 和 `build-openwrt.yml` 顶部的 `OPENWRT_VERSION`，并确认 PassWall 二进制 feed 提供对应 `packages-<series>`。
 - 增删 PassWall2 组件时，对照源码 feed 的 config 选择项和 ImageBuilder 二进制包名，避免两条构建路径配置漂移。
 - 修改默认网络时，更新 `files/etc/uci-defaults/99_custom_network`，并确认源码和 ImageBuilder 都会覆盖该目录。
 - 修改依赖时，核实 Ubuntu 24.04 可安装，并保留 `--no-install-recommends` 的低占用策略。
 - Workflow 拥有 `contents: write`，会创建/删除 Release 和 tag。不要在验证脚本改动时意外触发这些清理或发布步骤。
-- CI Release tag（例如 `IB_*`、`SNAPSHOT_*`）由 workflow 生成；不要为了本地调试手动创建或推送 tag。
-- GitHub Actions 使用 `${{ github.event.inputs.version }}` 之类表达式时，注意 `workflow_dispatch` 和 `repository_dispatch` 的事件输入路径不同，当前 workflow 已经依赖这个差异。
+- CI Release tag（例如 `IB_*`、`SRC_*`）由 workflow 生成；不要为了本地调试手动创建或推送 tag。
 
 ## 验证
 
@@ -88,7 +86,7 @@ git diff --check
 如果本机有 Ruby，建议再解析 workflow YAML：
 
 ```bash
-ruby -e 'require "yaml"; %w[.github/workflows/build-imagebuilder.yml .github/workflows/build-openwrt.yml .github/workflows/update-checker.yml].each { |f| YAML.safe_load_file(f, aliases: true) }'
+ruby -e 'require "yaml"; %w[.github/workflows/build-imagebuilder.yml .github/workflows/build-openwrt.yml].each { |f| YAML.safe_load_file(f, aliases: true) }'
 ```
 
 完整 OpenWrt 编译和 ImageBuilder 下载耗时较长且会产生大量临时文件。除非用户明确要求，不要在本地执行完整构建；优先依赖语法检查、静态检查和 GitHub Actions 验证。

@@ -22,9 +22,8 @@ Repository: https://github.com/yaotutu/gl-mt3000-openwrt
 
 | Workflow | 用途 |
 | --- | --- |
-| `Build OpenWrt (ImageBuilder)` | 快速构建路径。下载官方 OpenWrt ImageBuilder，加入 PassWall 预编译软件源并生成固件。 |
-| `Build OpenWrt (source)` | 从 OpenWrt 源码完整编译。适合深度定制，耗时长、磁盘占用高。 |
-| `Update Checker` | 每天检查 OpenWrt 24.10.x stable tag；发现新的 24.10 patch 版本时触发 ImageBuilder 构建。 |
+| `Build OpenWrt (ImageBuilder)` | 快速构建路径。使用固定版本 OpenWrt 24.10.8，下载官方 ImageBuilder，加入 PassWall 预编译软件源并生成固件。 |
+| `Build OpenWrt (source)` | 从固定的 OpenWrt 24.10.8 源码完整编译。适合深度定制，耗时长、磁盘占用高。 |
 
 构建产物会上传到 GitHub Actions Artifacts 和 Releases。
 
@@ -34,13 +33,13 @@ Repository: https://github.com/yaotutu/gl-mt3000-openwrt
 2. 选择要运行的 workflow：
    - 日常使用建议选择 **Build OpenWrt (ImageBuilder)**。
    - 需要源码级定制时选择 **Build OpenWrt (source)**。
-3. 点击 **Run workflow** 并按需要填写版本。
+3. 点击 **Run workflow**。版本已在 workflow 中固定为 OpenWrt 24.10.8，无需填写。
 4. 构建完成后，从 Artifacts 或 Releases 下载固件。
 
 ## 维护策略
 
 - 这是一个独立维护的构建配置仓库，不设置、不合并、不同步 `P3TERX/Actions-OpenWrt`。
-- 继续关注 OpenWrt stable 版本，用于获取安全修复、内核更新和设备支持改进。
+- 当前固定使用 OpenWrt 24.10.8；这是有意决策，避免运行时自动选择 PassWall feed 尚未支持的新版本。
 - PassWall 相关 feed 按兼容性需要更新，不盲目追逐开发分支。
 - 修改设备、软件包或默认配置时，需要同时检查 ImageBuilder 和源码编译两条路径。
 - 不提交本地 `buildspace/`、`imagebuilder/`、下载缓存、固件输出等生成物。
@@ -57,7 +56,7 @@ git diff --check
 如本机有 Ruby，可再解析 workflow YAML：
 
 ```bash
-ruby -e 'require "yaml"; %w[.github/workflows/build-imagebuilder.yml .github/workflows/build-openwrt.yml .github/workflows/update-checker.yml].each { |f| YAML.safe_load_file(f, aliases: true) }'
+ruby -e 'require "yaml"; %w[.github/workflows/build-imagebuilder.yml .github/workflows/build-openwrt.yml].each { |f| YAML.safe_load_file(f, aliases: true) }'
 ```
 
 ## 致谢
