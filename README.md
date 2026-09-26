@@ -39,7 +39,8 @@ Repository: https://github.com/yaotutu/gl-mt3000-openwrt
 ## 维护策略
 
 - 这是一个独立维护的构建配置仓库，不设置、不合并、不同步 `P3TERX/Actions-OpenWrt`。
-- 当前固定使用 OpenWrt 24.10.8；这是有意决策，避免运行时自动选择 PassWall feed 尚未支持的新版本。
+- 固定使用 OpenWrt 24 家族，当前版本为 `24.10.8`；后续只考虑 24 家族内的版本更新。
+- 发现新的 `24.10.x` patch 版本或 `24.11` 这类 24 家族新系列时，先确认是否升级，再修改固定版本；不自动切到 `25.12` 等更新的大版本系列。
 - PassWall 相关 feed 按兼容性需要更新，不盲目追逐开发分支。
 - 修改设备、软件包或默认配置时，需要同时检查 ImageBuilder 和源码编译两条路径。
 - 不提交本地 `buildspace/`、`imagebuilder/`、下载缓存、固件输出等生成物。

@@ -24,7 +24,10 @@
 - 不要为它添加名为 `upstream` 的 remote。
 - 不要尝试 merge、rebase 或同步该模板。
 - 该模板只在历史来源和 MIT 许可证中保留署名，不参与后续维护决策。
-- 构建版本固定为 OpenWrt 24.10.8；需要跟随的外部构建输入是 PassWall 相关 feed，不是 P3TERX 模板。
+- 构建基线是 OpenWrt 24 stable 家族，目前固定在 `24.10.8`。
+- 只跟随 OpenWrt 24 家族的版本演进；不要自动切到 `25.12` 或更新的大版本系列。
+- 后续如果发现新的 `24.10.x` patch 版本，或者出现 `24.11` 这类 OpenWrt 24 家族新系列，必须先向用户提示，并得到确认后再更新固定版本。
+- 更新版本前必须确认 OpenWrt 源码 tag 存在，且 PassWall 二进制 feed 提供对应的 `packages-<series>` 目录。
 - 如果你决定让 GitHub 仓库脱离 fork network，应使用 GitHub 仓库 Settings 中的 **Leave fork network**；这是仓库元数据变更，不需要修改本仓库文件。
 
 ## 目录职责
@@ -51,7 +54,8 @@ ImageBuilder 和源码编译不是简单共享同一套 helper 脚本：
 ### Workflow 触发关系
 
 - `build-imagebuilder.yml` 和 `build-openwrt.yml` 都只支持手动 `workflow_dispatch`。
-- 两个构建 workflow 都固定使用 OpenWrt 24.10.8，不再接受运行时版本输入，也没有每日自动触发。
+- 两个构建 workflow 都固定使用 OpenWrt `24.10.8`，不再接受运行时版本输入，也没有每日自动触发。
+- 版本固定，不代表忽略 24 家族更新；发现新的 24 家族版本时，应向用户提示是否升级。
 
 ## 本地脚本约定
 
@@ -67,7 +71,8 @@ ImageBuilder 和源码编译不是简单共享同一套 helper 脚本：
 ## 修改建议
 
 - 修改设备/Profile 时，同步更新 `custom-config.sh` 和 `build-imagebuilder.yml` 的 `TARGET`、`ARCH`、`PROFILE` 与包列表。
-- 升级 OpenWrt 版本时，同步更新 `build-imagebuilder.yml` 和 `build-openwrt.yml` 顶部的 `OPENWRT_VERSION`，并确认 PassWall 二进制 feed 提供对应 `packages-<series>`。
+- 升级 OpenWrt 版本时，只考虑 OpenWrt 24 家族；先向用户提示新版本并确认，再同步更新 `build-imagebuilder.yml` 和 `build-openwrt.yml` 顶部的 `OPENWRT_VERSION`。
+- 升级前确认 PassWall 二进制 feed 提供对应 `packages-<series>`；如果未来只有 `packages-24.10`，就不能直接切到其它系列。
 - 增删 PassWall2 组件时，对照源码 feed 的 config 选择项和 ImageBuilder 二进制包名，避免两条构建路径配置漂移。
 - 修改默认网络时，更新 `files/etc/uci-defaults/99_custom_network`，并确认源码和 ImageBuilder 都会覆盖该目录。
 - 修改依赖时，核实 Ubuntu 24.04 可安装，并保留 `--no-install-recommends` 的低占用策略。
