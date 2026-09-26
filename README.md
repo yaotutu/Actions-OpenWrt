@@ -49,7 +49,17 @@ sha256sum -c sha256sums
 
 具体哈希以对应 Release 发布的 `sha256sums` 为准。
 
-固件内置的 **System → Backup / Flash Firmware** 页面额外提供 **Flash latest release** 按钮，可直接从本仓库最新 GitHub Release 拉取 sysupgrade 镜像并在线刷写。
+也可以不先下载到电脑，直接在路由器上通过 OpenWrt 自带的 `sysupgrade` 在线升级：
+
+```bash
+sysupgrade -v https://github.com/yaotutu/gl-mt3000-openwrt/releases/latest/download/gl-mt3000-sysupgrade.bin
+```
+
+默认保留配置；如需恢复默认配置，改用：
+
+```bash
+sysupgrade -n -v https://github.com/yaotutu/gl-mt3000-openwrt/releases/latest/download/gl-mt3000-sysupgrade.bin
+```
 
 ## 刷机注意
 
