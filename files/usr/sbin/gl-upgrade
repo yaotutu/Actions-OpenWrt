@@ -1,0 +1,3 @@
+#!/bin/sh
+# Fixed online sysupgrade entry point for this firmware repository.
+exec /sbin/sysupgrade -v "$@" https://github.com/yaotutu/gl-mt3000-openwrt/releases/latest/download/gl-mt3000-sysupgrade.bin

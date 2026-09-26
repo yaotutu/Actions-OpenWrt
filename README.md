@@ -49,16 +49,22 @@ sha256sum -c sha256sums
 
 具体哈希以对应 Release 发布的 `sha256sums` 为准。
 
-也可以不先下载到电脑，直接在路由器上通过 OpenWrt 自带的 `sysupgrade` 在线升级：
+也可以不先下载到电脑，直接在路由器上执行：
 
 ```bash
-sysupgrade -v https://github.com/yaotutu/gl-mt3000-openwrt/releases/latest/download/gl-mt3000-sysupgrade.bin
+gl-upgrade
+```
+
+`gl-upgrade` 使用 OpenWrt 自带的 `sysupgrade`，固定下载地址为：
+
+```text
+https://github.com/yaotutu/gl-mt3000-openwrt/releases/latest/download/gl-mt3000-sysupgrade.bin
 ```
 
 默认保留配置；如需恢复默认配置，改用：
 
 ```bash
-sysupgrade -n -v https://github.com/yaotutu/gl-mt3000-openwrt/releases/latest/download/gl-mt3000-sysupgrade.bin
+gl-upgrade -n
 ```
 
 ## 刷机注意
