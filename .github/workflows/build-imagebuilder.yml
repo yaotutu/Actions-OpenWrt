@@ -72,7 +72,6 @@ jobs:
         cd imagebuilder
         make image PROFILE="$PROFILE" FILES="$GITHUB_WORKSPACE/files" PACKAGES="luci luci-ssl luci-i18n-base-zh-cn \
           wpad-mbedtls -wpad-basic-mbedtls \
-          usteer luci-app-usteer luci-i18n-usteer-zh-cn \
           -dnsmasq dnsmasq-full \
           luci-app-passwall2 luci-i18n-passwall2-zh-cn \
           chinadns-ng xray-core sing-box hysteria naiveproxy \

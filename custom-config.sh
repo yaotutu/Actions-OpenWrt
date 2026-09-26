@@ -12,11 +12,9 @@ echo 'CONFIG_PACKAGE_luci=y' >> "$BUILD_ROOT/.config"
 echo 'CONFIG_PACKAGE_luci-ssl=y' >> "$BUILD_ROOT/.config"
 echo 'CONFIG_LUCI_LANG_zh_Hans=y' >> "$BUILD_ROOT/.config"
 
-# Wired AP roaming support
+# Wi-Fi support
 echo '# CONFIG_PACKAGE_wpad-basic-mbedtls is not set' >> "$BUILD_ROOT/.config"
 echo 'CONFIG_PACKAGE_wpad-mbedtls=y' >> "$BUILD_ROOT/.config"
-echo 'CONFIG_PACKAGE_usteer=y' >> "$BUILD_ROOT/.config"
-echo 'CONFIG_PACKAGE_luci-app-usteer=y' >> "$BUILD_ROOT/.config"
 
 # PassWall2
 echo 'CONFIG_PACKAGE_luci-app-passwall2=y' >> "$BUILD_ROOT/.config"
