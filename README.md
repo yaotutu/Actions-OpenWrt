@@ -49,6 +49,8 @@ sha256sum -c sha256sums
 
 具体哈希以对应 Release 发布的 `sha256sums` 为准。
 
+固件内置的 **System → Backup / Flash Firmware** 页面额外提供 **Flash latest release** 按钮，可直接从本仓库最新 GitHub Release 拉取 sysupgrade 镜像并在线刷写。
+
 ## 刷机注意
 
 本项目只面向 GL.iNet GL-MT3000 / Beryl AX，不要刷到其它设备。

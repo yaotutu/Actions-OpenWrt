@@ -89,7 +89,8 @@ jobs:
         rm -rf packages
         { echo '### SHA256SUMS'; echo '```txt'; cat sha256sums; echo '```'; } > $GITHUB_WORKSPACE/SHA256SUMS
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-        echo "status=success" >> $GITHUB_OUTPUT
+        cp "$PWD/openwrt-${OPENWRT_VERSION}-mediatek-filogic-glinet_gl-mt3000-squashfs-sysupgrade.bin" "$GITHUB_WORKSPACE/gl-mt3000-sysupgrade.bin"
+        echo "status=success" >> "$GITHUB_OUTPUT"
 
     - name: Upload firmware directory
       uses: actions/upload-artifact@main
@@ -105,7 +106,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: IB_v${{ steps.version.outputs.version }}_${{ env.FILE_DATE }}
-        files: ${{ env.FIRMWARE }}/*
+        files: |
+          ${{ env.FIRMWARE }}/*
+          ${{ github.workspace }}/gl-mt3000-sysupgrade.bin
         body_path: ${{ github.workspace }}/SHA256SUMS
 
     - name: Delete workflow runs
