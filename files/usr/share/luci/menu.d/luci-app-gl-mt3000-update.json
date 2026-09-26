@@ -1,0 +1,13 @@
+{
+	"admin/system/gl-mt3000-update": {
+		"title": "在线更新",
+		"order": 35,
+		"action": {
+			"type": "view",
+			"path": "gl-mt3000-update"
+		},
+		"depends": {
+			"acl": [ "luci-app-gl-mt3000-update" ]
+		}
+	}
+}
